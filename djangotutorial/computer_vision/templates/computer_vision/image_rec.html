@@ -1,6 +1,56 @@
 {% extends "computer_vision/base_dashboard.html" %}
 
 {% block content %}
-    <h2>📸 Розпізнавання зображень</h2>
-    <p>Це сторінка для завантаження та аналізу фотографій.</p>
+<div class="recognition-container">
+    <h2 class="section-title">📸 Модуль розпізнавання зображень</h2>
+    <p class="sub-title">Завантажте фотографію, щоб MobileNetV2 могла визначити, що на ній зображено.</p>
+
+    <div class="upload-section">
+        <form id="upload-form" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <div class="input-group">
+                <input type="file" name="image" id="id_image" accept="image/*" required>
+            </div>
+
+            <button type="submit" id="submit-btn" class="btn-primary">
+                Розпізнати
+            </button>
+        </form>
+    </div>
+
+    <div id="status-area" class="status-area">
+        <div id="loader" class="loader-container" style="display: none;">
+            <div class="spinner"></div>
+            <p>Модель аналізує зображення...</p>
+        </div>
+
+        {% if result %}
+        <div class="result-box animated fadeIn">
+            <h3>Результат аналізу:</h3>
+            <div class="image-preview" style="margin-bottom: 20px;">
+                <img src="{{ instance.image.url }}" alt="Завантажене зображення" 
+                     style="max-width: 300px; max-height: 300px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+            </div>
+            <p class="result-text">{{ result }}</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    const form = document.getElementById('upload-form');
+    const loader = document.getElementById('loader');
+    const statusArea = document.querySelector('.result-box');
+
+    form.onsubmit = function() {
+        if (statusArea) {
+            statusArea.style.display = 'none';
+        }
+        
+        loader.style.display = 'block';
+      
+        document.getElementById('submit-btn').disabled = true;
+    };
+</script>
 {% endblock %}
