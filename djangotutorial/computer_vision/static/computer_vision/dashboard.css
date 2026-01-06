@@ -1,0 +1,17 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; }
+
+.dashboard-container { display: flex; min-height: 100vh; }
+
+/* Стилі Sidebar */
+.sidebar { width: 250px; background-color: #2c3e50; color: white; padding: 20px; }
+.sidebar h2 { margin-bottom: 30px; text-align: center; color: #3498db; }
+.sidebar ul { list-style: none; }
+.sidebar ul li { margin: 15px 0; }
+.sidebar ul li a { color: white; text-decoration: none; font-size: 18px; display: block; padding: 10px; border-radius: 5px; transition: 0.3s; }
+.sidebar ul li a:hover { background-color: #34495e; color: #3498db; }
+
+/* Стилі Контенту */
+.content { flex-grow: 1; padding: 0; }
+.top-bar { background-color: white; padding: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+.workspace { padding: 30px; }

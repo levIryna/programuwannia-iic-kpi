@@ -1,9 +1,11 @@
 /tutorial-env/
-.DS_Store
 
-polls/__pycache__/
-media/
+# Python bytecode
 
-models 
-*.pub
 *.pyc
+*.pyo
+*.pyd
+
+# Django local settings (if any)
+db.sqlite3
+media/

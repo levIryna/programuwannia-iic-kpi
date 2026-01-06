@@ -5,6 +5,7 @@ from django.conf import settings
 urlpatterns = [
     path("polls/", include("polls.urls")),
     path("admin/", admin.site.urls),
+    path('computer_vision/', include('computer_vision.urls')),
 ]
 
 if settings.DEBUG:

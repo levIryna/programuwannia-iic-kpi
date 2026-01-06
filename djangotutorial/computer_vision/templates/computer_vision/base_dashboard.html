@@ -1,0 +1,30 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Панель керування розпізнаванням</title>
+    <link rel="stylesheet" href="{% static 'computer_vision/dashboard.css' %}">
+</head>
+<body>
+    <div class="dashboard-container">
+        <nav class="sidebar">
+            <div class="logo">
+                <h2>Vision AI</h2>
+            </div>
+            <ul>
+              <li><a href="{% url 'computer_vision:image_rec' %}">📸 Розпізнавання зображень</a></li>
+              <li><a href="{% url 'computer_vision:video_rec' %}">🎥 Відеоаналіз</a></li>
+              <li><a href="{% url 'computer_vision:audio_rec' %}">🎵 Аналіз звуку</a></li>
+              <li><a href="{% url 'computer_vision:spectrum_rec' %}">📊 Спектральний аналіз</a></li>
+              <li><a href="{% url 'computer_vision:custom_rec' %}">🔍 Аналіз облич (вибір)</a></li>
+            </ul>
+        </nav>
+
+    <main class="content">
+        {% block content %}
+        {% endblock %}
+    </main> 
+    </div>
+</body>
+</html>
