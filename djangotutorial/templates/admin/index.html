@@ -1,0 +1,27 @@
+{% extends "admin/base_site.html" %} 
+{% load i18n static %} 
+
+{% block extrastyle %}{{ block.super }}{% endblock %} 
+{% block coltype %}colMS{% endblock %} 
+{% block bodyclass %}{{ block.super }} dashboard{% endblock %} 
+{% block nav-breadcrumbs %}{% endblock %} 
+{% block nav-sidebar %}{% endblock %} 
+
+{% block content %}
+    <div id="content-main">
+        <h2>👋 Welcome to the Polls Administration Dashboard!</h2>
+        <div class="module">
+            <h3>Polls Management</h3>
+            <ul class="nav">
+                {# Link to the change list (view/edit existing questions) #}
+                <li><a href="{% url 'admin:polls_question_changelist' %}">Manage Questions</a></li>
+                {# Link to the add view (create a new question) #}
+                <li><a href="{% url 'admin:polls_question_add' %}">Add New Question</a></li>
+            </ul>
+        </div>
+        {# You can add other custom sections/modules here #}
+    </div>
+{% endblock %} 
+{% block sidebar %}
+{# This block is intentionally left empty to remove the "Recent actions" sidebar. #}
+{% endblock %}
