@@ -11,7 +11,7 @@ from keras.applications.mobilenet_v2 import MobileNetV2, preprocess_input, decod
 from keras.utils import load_img, img_to_array
 
 from .forms import ImageUploadForm, VideoUploadForm, AudioUploadForm
-from .models import VideoAnalysis, AudioModel
+from .models import AudioModel
 
 import tensorflow_hub as hub
 import pandas as pd
@@ -22,6 +22,8 @@ import matplotlib.pyplot as plt
 
 import matplotlib
 matplotlib.use('Agg')
+
+import speech_recognition as sr
 
 ssl._create_default_https_context = ssl._create_unverified_context
 
@@ -182,7 +184,6 @@ def audio_rec(request):
 
 # --- СПЕКТРАЛЬНИЙ АНАЛІЗ ---
 # -------------------------------------------------------------
-
 def spectrum_rec(request):
     result = None
     instance = None
@@ -240,5 +241,50 @@ def spectrum_rec(request):
 
 
 
-def custom_rec(request):
-    return render(request, 'computer_vision/custom_rec.html')
+
+# --- РОЗПІЗНАВАНЯ SPEECH ---
+# -------------------------------------------------------------
+def speech_to_text(request):
+    result = None
+    instance = None
+    
+    if request.method == 'POST':
+        form = AudioUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            instance = form.save()
+            
+            try:
+                # 1. Google Speech Recognition потребує WAV формат
+                # Ми використовуємо Pydub, щоб конвертувати будь-який вхідний файл у тимчасовий WAV
+                audio = AudioSegment.from_file(instance.audio.path)
+                temp_wav = "temp_speech.wav"
+                audio.export(temp_wav, format="wav")
+
+                # 2. Ініціалізація розпізнавача
+                r = sr.Recognizer()
+                with sr.AudioFile(temp_wav) as source:
+                    audio_data = r.record(source)
+                    # Використовуємо Google Web Speech API (безкоштовно)
+                    # language='uk-UA' для української мови
+                    text = r.recognize_google(audio_data, language='uk-UA')
+                    
+                    result = text
+                    instance.result = result
+                    instance.save()
+                
+                # Видаляємо тимчасовий файл
+                if os.path.exists(temp_wav):
+                    os.remove(temp_wav)
+
+            except Exception as e:
+                result = f"Не вдалося розпізнати мову: {e}"
+        else:
+            form = AudioUploadForm()
+    else:
+        form = AudioUploadForm()
+
+    return render(request, 'computer_vision/speech_to_text.html', {
+        'form': form,
+        'result': result,
+        'instance': instance
+    })

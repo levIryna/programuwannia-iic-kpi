@@ -9,5 +9,5 @@ urlpatterns = [
     path('video/', views.video_rec, name='video_rec'),
     path('audio/', views.audio_rec, name='audio_rec'),
     path('spectrum/', views.spectrum_rec, name='spectrum_rec'),
-    path('custom/', views.custom_rec, name='custom_rec'),
+    path('speech/', views.speech_to_text, name='speech_to_text')
 ]

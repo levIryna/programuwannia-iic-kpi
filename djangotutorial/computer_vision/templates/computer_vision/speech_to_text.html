@@ -1,0 +1,63 @@
+{% extends "computer_vision/base_dashboard.html" %}
+
+{% block content %}
+<div class="recognition-container">
+    <h2 class="section-title">🎙️ Розпізнавання мовлення (Speech-to-Text)</h2>
+    <p class="sub-title">Завантажте аудіофайл (MP3 або WAV), щоб перетворити голос у друкований текст.</p>
+
+    <div class="upload-section">
+        <form id="upload-form" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <div class="input-group">
+                {{ form.audio }}
+            </div>
+
+            <button type="submit" id="submit-btn" class="btn-primary">
+                Розпізнати текст
+            </button>
+        </form>
+    </div>
+
+    <div id="status-area" class="status-area">
+        <div id="loader" class="loader-container" style="display: none;">
+            <div class="spinner"></div>
+            <p>Штучний інтелект слухає та розшифровує аудіо...</p>
+        </div>
+
+        {% if result %}
+        <div class="result-box animated fadeIn">
+            <h3>Розшифрований текст:</h3>
+            
+            <div class="audio-preview" style="margin-top: 10px; margin-bottom: 20px;">
+                <audio controls style="width: 100%;">
+                    <source src="{{ instance.audio.url }}" type="audio/mpeg">
+                </audio>
+            </div>
+
+            <div class="text-output" style="background: #f9f9f9; padding: 20px; border-left: 5px solid #6c5ce7; border-radius: 5px; font-style: italic; color: #2d3436; font-size: 1.1rem;">
+                "{{ result }}"
+            </div>
+            
+            <p class="sub-text" style="margin-top: 15px; font-size: 0.9rem; color: #636e72;">
+                Мова: Українська | Модель: Google Speech API
+            </p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    const form = document.getElementById('upload-form');
+    const loader = document.getElementById('loader');
+    const statusArea = document.querySelector('.result-box');
+
+    form.onsubmit = function() {
+        if (statusArea) {
+            statusArea.style.display = 'none';
+        }
+        loader.style.display = 'block';
+        document.getElementById('submit-btn').disabled = true;
+    };
+</script>
+{% endblock %}
