@@ -1,6 +1,65 @@
 {% extends "computer_vision/base_dashboard.html" %}
 
 {% block content %}
-    <h2>📊 Спектральний аналіз</h2>
-    <p>Аналіз елементів спектру сигналу (частотний аналіз).</p>
+<div class="recognition-container">
+    <h2 class="section-title">📊 Модуль спектрального аналізу</h2>
+    <p class="sub-title">Завантажте аудіофайл для візуалізації його частотного спектру та часової форми.</p>
+
+    <div class="upload-section">
+        <form id="upload-form" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+    
+        <div class="input-group">
+             {{ form.audio }}
+        </div>
+
+    <button type="submit" id="submit-btn" class="btn-primary">
+        Побудувати спектрограму
+    </button>
+        </form>
+    </div>
+
+    <div id="status-area" class="status-area">
+        <div id="loader" class="loader-container" style="display: none;">
+            <div class="spinner"></div>
+            <p>Виконується обробка сигналу та побудова графіків...</p>
+        </div>
+
+        {% if result %}
+        <div class="result-box animated fadeIn">
+            <h3>Результати аналізу:</h3>
+            
+            <div class="audio-preview" style="margin-bottom: 20px;">
+                <audio controls style="width: 100%; max-width: 500px;">
+                    <source src="{{ instance.audio.url }}" type="audio/mpeg">
+                </audio>
+            </div>
+
+            <div class="spectral-plots">
+                <div class="plot-item" style="margin-top: 20px;">
+                    <h4>Частотний спектр (Spectrogram):</h4>
+                    <img src="data:image/png;base64,{{ spectrogram_img }}" alt="Спектрограма" 
+                         style="width: 100%; max-width: 800px; border-radius: 8px; border: 1px solid #ddd;">
+                </div>
+            </div>
+            
+            <p class="result-text" style="margin-top: 15px;">{{ result }}</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    const form = document.getElementById('upload-form');
+    const loader = document.getElementById('loader');
+    const statusArea = document.querySelector('.result-box');
+
+    form.onsubmit = function() {
+        if (statusArea) {
+            statusArea.style.display = 'none';
+        }
+        loader.style.display = 'block';
+        document.getElementById('submit-btn').disabled = true;
+    };
+</script>
 {% endblock %}

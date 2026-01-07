@@ -1,6 +1,8 @@
 import os
 import ssl
 import cv2
+import io
+import base64
 import numpy as np
 import tensorflow as tf
 from django.shortcuts import render, redirect
@@ -8,7 +10,7 @@ from django.shortcuts import render, redirect
 from keras.applications.mobilenet_v2 import MobileNetV2, preprocess_input, decode_predictions
 from keras.utils import load_img, img_to_array
 
-from .forms import ImageUploadForm, VideoUploadForm
+from .forms import ImageUploadForm, VideoUploadForm, AudioUploadForm
 from .models import VideoAnalysis, AudioModel
 
 import tensorflow_hub as hub
@@ -16,6 +18,10 @@ import pandas as pd
 from scipy.io import wavfile
 from django.conf import settings
 from pydub import AudioSegment
+import matplotlib.pyplot as plt
+
+import matplotlib
+matplotlib.use('Agg')
 
 ssl._create_default_https_context = ssl._create_unverified_context
 
@@ -176,8 +182,63 @@ def audio_rec(request):
 
 # --- СПЕКТРАЛЬНИЙ АНАЛІЗ ---
 # -------------------------------------------------------------
+
 def spectrum_rec(request):
-    return render(request, 'computer_vision/spectrum_rec.html')
+    result = None
+    instance = None
+    spectrogram_img = None
+    
+    if request.method == 'POST':
+        form = AudioUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            instance = form.save()
+            
+            try:
+                # 1. Завантаження аудіо
+                audio = AudioSegment.from_file(instance.audio.path)
+                audio = audio.set_channels(1)  # Робимо моно
+                
+                # 2. Отримання числових даних
+                samples = np.array(audio.get_array_of_samples())
+                sample_rate = audio.frame_rate
+
+                # 3. Побудова графіка
+                plt.figure(figsize=(10, 4))
+                plt.specgram(samples, NFFT=1024, Fs=sample_rate, noverlap=512, cmap='viridis')
+                plt.title('Спектрограма аудіосигналу')
+                plt.xlabel('Час (сек)')
+                plt.ylabel('Частота (Гц)')
+                plt.colorbar(label='Гучність (дБ)')
+                plt.tight_layout()
+
+                # 4. Перетворення графіка в картинку (Base64)
+                buffer = io.BytesIO()
+                plt.savefig(buffer, format='png')
+                buffer.seek(0)
+                image_png = buffer.getvalue()
+                buffer.close()
+                plt.close() # Очищаємо пам'ять
+
+                # Заповнюємо змінну, яка раніше була порожньою
+                spectrogram_img = base64.b64encode(image_png).decode('utf-8')
+                
+                result = "Спектральний аналіз успішно виконано"
+            except Exception as e:
+                result = f"Помилка при обробці: {e}"
+        else:
+            result = "Помилка завантаження: перевірте формат та розмір файлу."
+    else:
+        form = AudioUploadForm()
+
+    return render(request, 'computer_vision/spectrum_rec.html', {
+        'form': form,
+        'result': result,
+        'instance': instance,
+        'spectrogram_img': spectrogram_img
+    })
+# -------------------------------------------------------------
+
+
 
 def custom_rec(request):
     return render(request, 'computer_vision/custom_rec.html')
