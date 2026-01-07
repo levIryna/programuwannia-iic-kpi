@@ -1,5 +1,59 @@
 {% extends "computer_vision/base_dashboard.html" %}
+
 {% block content %}
-    <h2>🎵 Аналіз звуку</h2>
-    <p>Завантажте аудіофайл для розпізнавання мовлення або звуків.</p>
+<div class="recognition-container">
+    <h2 class="section-title">🎵 Модуль розпізнавання аудіо</h2>
+    <p class="sub-title">Завантажте аудіофайл (WAV або MP3), щоб модель YAMNet визначила тип звуку.</p>
+
+    <div class="upload-section">
+        <form id="upload-form" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <div class="input-group">
+                <input type="file" name="audio" id="id_audio" accept="audio/*" required>
+            </div>
+
+            <button type="submit" id="submit-btn" class="btn-primary">
+                Розпізнати звук
+            </button>
+        </form>
+    </div>
+
+    <div id="status-area" class="status-area">
+        <div id="loader" class="loader-container" style="display: none;">
+            <div class="spinner"></div>
+            <p>Модель аналізує аудіозапис...</p>
+        </div>
+
+        {% if result %}
+        <div class="result-box animated fadeIn">
+            <h3>Результат аналізу:</h3>
+            
+            <div class="audio-preview" style="margin-bottom: 20px;">
+                <audio controls style="width: 100%; max-width: 400px;">
+                    <source src="{{ instance.audio.url }}" type="audio/mpeg">
+                    Ваш браузер не підтримує аудіоелемент.
+                </audio>
+            </div>
+
+            <p class="result-text"><strong>Виявлено:</strong> {{ result }}</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    const form = document.getElementById('upload-form');
+    const loader = document.getElementById('loader');
+    const statusArea = document.querySelector('.result-box');
+
+    form.onsubmit = function() {
+        if (statusArea) {
+            statusArea.style.display = 'none';
+        }
+        
+        loader.style.display = 'block';
+        document.getElementById('submit-btn').disabled = true;
+    };
+</script>
 {% endblock %}

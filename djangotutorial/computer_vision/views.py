@@ -9,7 +9,13 @@ from keras.applications.mobilenet_v2 import MobileNetV2, preprocess_input, decod
 from keras.utils import load_img, img_to_array
 
 from .forms import ImageUploadForm, VideoUploadForm
-from .models import VideoAnalysis
+from .models import VideoAnalysis, AudioModel
+
+import tensorflow_hub as hub
+import pandas as pd
+from scipy.io import wavfile
+from django.conf import settings
+from pydub import AudioSegment
 
 ssl._create_default_https_context = ssl._create_unverified_context
 
@@ -117,10 +123,59 @@ def video_rec(request):
 
 
 
-# --- РЕШТА ФУНКЦІЙ ---
-def audio_rec(request):
-    return render(request, 'computer_vision/audio_rec.html')
+# --- РОЗПІЗНАВАННЯ AУДІО ---
+# -------------------------------------------------------------
+MODEL_PATH = os.path.join(settings.BASE_DIR, 'computer_vision', 'models', 'yamnet')
+# 2. Завантажуємо модель ЛОКАЛЬНО з папки (не з інтернету)
+yamnet_model = hub.load(MODEL_PATH)
 
+def audio_rec(request):
+    result = None
+    instance = None
+
+    if request.method == 'POST' and request.FILES.get('audio'):
+        audio_file = request.FILES['audio']
+        instance = AudioModel.objects.create(audio=audio_file)
+        
+        try:
+            # 1. Читаємо файл незалежно від формату (MP3, WAV, M4A)
+            audio = AudioSegment.from_file(instance.audio.path)
+            
+            # 2. Конвертуємо під вимоги моделі (16kHz, Mono)
+            audio = audio.set_frame_rate(16000).set_channels(1)
+            
+            # 3. Перетворюємо в масив чисел (масив амплітуд)
+            samples = np.array(audio.get_array_of_samples())
+            
+            # 4. Нормалізація: переводимо цілі числа в float32 (від -1.0 до 1.0)
+            waveform = samples.astype(np.float32) / 32768.0
+            
+            # 5. Прогноз нейромережі
+            scores, embeddings, spectrogram = yamnet_model(waveform)
+            
+            # 6. Отримуємо назву класу з CSV
+            class_map_path = os.path.join(MODEL_PATH, 'assets', 'yamnet_class_map.csv')
+            class_names = pd.read_csv(class_map_path)['display_name'].tolist()
+            
+            top_class = np.argmax(np.mean(scores.numpy(), axis=0))
+            result = class_names[top_class]
+
+            instance.result = result
+            instance.save()
+
+        except Exception as e:
+            result = f"Помилка обробки: {str(e)}"
+
+    return render(request, 'computer_vision/audio_rec.html', {
+        'result': result,
+        'instance': instance
+    })
+# -------------------------------------------------------------
+
+
+
+# --- СПЕКТРАЛЬНИЙ АНАЛІЗ ---
+# -------------------------------------------------------------
 def spectrum_rec(request):
     return render(request, 'computer_vision/spectrum_rec.html')
 

@@ -12,3 +12,5 @@ media/
 
 models
 .DS_Store
+# models 
+djangotutorial/computer_vision/models
