@@ -1,1 +1,5 @@
 /tutorial-env/
+.DS_Store
+
+polls/__pycache__/
+media/
