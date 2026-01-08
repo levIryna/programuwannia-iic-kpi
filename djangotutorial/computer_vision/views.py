@@ -1,66 +1,123 @@
-from django.shortcuts import render, redirect
-import numpy as np
-from tensorflow.keras.applications.mobilenet_v2 import MobileNetV2, preprocess_input, decode_predictions
-from tensorflow.keras.preprocessing import image
-from django.shortcuts import render
-from .forms import ImageUploadForm
-import ssl
 import os
+import ssl
+import cv2
+import numpy as np
+import tensorflow as tf
+from django.shortcuts import render, redirect
 
-# Вимикаємо перевірку SSL сертифікатів
+from keras.applications.mobilenet_v2 import MobileNetV2, preprocess_input, decode_predictions
+from keras.utils import load_img, img_to_array
+
+from .forms import ImageUploadForm, VideoUploadForm
+from .models import VideoAnalysis
+
 ssl._create_default_https_context = ssl._create_unverified_context
+
+# Використовуємо одну модель і для фото, і для відео
+model = MobileNetV2(weights='imagenet')
 
 def index(request):
     return redirect('computer_vision:image_rec')
 
 
-# розпізнавання зображення 
-# Завантажуємо модель один раз при запуску сервера
-model = MobileNetV2(weights='imagenet')
 
+# --- РОЗПІЗНАВАННЯ ЗОБРАЖЕННЯ ---
+# -------------------------------------------------------------
 def image_rec(request):
     result = None
-    instance = None  # Важливо: ініціалізуємо змінну на початку
-    
+    instance = None
     if request.method == 'POST':
         form = ImageUploadForm(request.POST, request.FILES)
         if form.is_valid():
             instance = form.save()
-            
-            # 1. Підготовка зображення
             img_path = instance.image.path
-            img = image.load_img(img_path, target_size=(224, 224))
-            x = image.img_to_array(img)
+            
+            img = load_img(img_path, target_size=(224, 224))
+            x = img_to_array(img)
             x = np.expand_dims(x, axis=0)
             x = preprocess_input(x)
 
-            # 2. Розпізнавання
             preds = model.predict(x)
-            
-            # 3. Декодування результату
             decoded = decode_predictions(preds, top=1)[0][0]
             label = decoded[1].replace('_', ' ')
             score = decoded[2] * 100
             
             result = f"Це {label} з імовірністю {score:.2f}%"
-            
-            # Збереження результату в базу
             instance.analysis_result = {"label": label, "score": float(decoded[2])}
             instance.save()
     else:
         form = ImageUploadForm()
 
-    # Передаємо instance, щоб картинка відобразилася в HTML
     return render(request, 'computer_vision/image_rec.html', {
-        'form': form, 
-        'result': result, 
-        'instance': instance
+        'form': form, 'result': result, 'instance': instance
     })
+# -------------------------------------------------------------
 
 
+
+# --- РОЗПІЗНАВАННЯ ВІДЕО ---
+# -------------------------------------------------------------
 def video_rec(request):
-    return render(request, 'computer_vision/video_rec.html')
+    result = None
+    instance = None
+    
+    if request.method == 'POST':
+        form = VideoUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            instance = form.save()
+            video_path = instance.video.path
+            
+            cap = cv2.VideoCapture(video_path)
+            detected_objects = set()  # Зберігаємо унікальні назви знайдених об'єктів
+            
+            frame_idx = 0
+            while cap.isOpened():
+                ret, frame = cap.read()
+                if not ret:
+                    break
+                
+                # Аналізуємо кожен 30-й кадр (приблизно 1 кадр на секунду відео)
+                if frame_idx % 30 == 0:
+                    # Перетворюємо кадр OpenCV (BGR) у формат для моделі (RGB + Size)
+                    img_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                    img_resized = cv2.resize(img_rgb, (224, 224))
+                    
+                    x = img_to_array(img_resized)
+                    x = np.expand_dims(x, axis=0)
+                    x = preprocess_input(x)
+                    
+                    preds = model.predict(x, verbose=0)
+                    decoded = decode_predictions(preds, top=3)[0] # Беремо топ-3 для кращого результату
+                    
+                    for _, label, score in decoded:
+                        if score > 0.25:  # Якщо модель впевнена на 25%+
+                            detected_objects.add(label.replace('_', ' '))
+                
+                frame_idx += 1
+                # Обмеження для безпеки (наприклад, не більше 300 кадрів / 10 сек)
+                if frame_idx > 300: 
+                    break
+            
+            cap.release()
+            
+            if detected_objects:
+                result = "На відео помічено: " + ", ".join(list(detected_objects))
+            else:
+                result = "Об'єктів не розпізнано."
+                
+            instance.analysis_result = {"detected": list(detected_objects)}
+            instance.save()
+    else:
+        form = VideoUploadForm()
 
+    return render(request, 'computer_vision/video_rec.html', {
+        'form': form, 'result': result, 'instance': instance
+    })
+# -------------------------------------------------------------
+
+
+
+# --- РЕШТА ФУНКЦІЙ ---
 def audio_rec(request):
     return render(request, 'computer_vision/audio_rec.html')
 

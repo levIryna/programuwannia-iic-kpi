@@ -16,3 +16,12 @@ class ImageAnalysis(models.Model):
 
     def __str__(self):
         return f"Аналіз №{self.id} від {self.uploaded_at.strftime('%d.%m.%Y %H:%M')}"
+
+
+class VideoAnalysis(models.Model):
+    video = models.FileField(upload_to='videos/', verbose_name="Відеофайл")
+    analysis_result = models.JSONField(null=True, blank=True)  
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Video {self.id} analyzed at {self.uploaded_at}"

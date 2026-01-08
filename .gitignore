@@ -9,3 +9,6 @@
 # Django local settings (if any)
 db.sqlite3
 media/
+
+models
+.DS_Store

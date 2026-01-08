@@ -1,6 +1,61 @@
 {% extends "computer_vision/base_dashboard.html" %}
 
 {% block content %}
-    <h2>🎥 Відеоаналіз</h2>
-    <p>Розділ для розпізнавання елементів у відеопотоці.</p>
+<div class="recognition-container">
+    <h2 class="section-title">🎥 Модуль розпізнавання відео</h2>
+    <p class="sub-title">Завантажте відеофайл, щоб SSD MobileNet могла знайти та класифікувати об'єкти на ньому.</p>
+
+    <div class="upload-section">
+        <form id="upload-form" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <div class="input-group">
+                <input type="file" name="video" id="id_video" accept="video/*" required>
+            </div>
+
+            <button type="submit" id="submit-btn" class="btn-primary">
+                Аналізувати відео
+            </button>
+        </form>
+    </div>
+
+    <div id="status-area" class="status-area">
+        <div id="loader" class="loader-container" style="display: none;">
+            <div class="spinner"></div>
+            <p>Модель обробляє кадри відео... Це може зайняти деякий час.</p>
+        </div>
+
+        {% if result %}
+        <div class="result-box animated fadeIn">
+            <h3>Результат аналізу:</h3>
+            <p class="result-text">{{ result }}</p>
+            
+           {% if instance.video %}
+            <div class="video-preview" style="margin-top: 20px;">
+                <video width="100%" controls style="border-radius: 10px; max-height: 300px; max-width: 300px;">
+                    <source src="{{ instance.video.url }}" type="video/mp4">
+                    Ваш браузер не підтримує тег відео.
+                </video>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    const form = document.getElementById('upload-form');
+    const loader = document.getElementById('loader');
+    const statusArea = document.querySelector('.result-box');
+
+    form.onsubmit = function() {
+        if (statusArea) {
+            statusArea.style.display = 'none';
+        }
+        
+        loader.style.display = 'block';
+        document.getElementById('submit-btn').disabled = true;
+        document.getElementById('submit-btn').innerText = "Обробка...";
+    };
+</script>
 {% endblock %}
